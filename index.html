@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Finding Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <h1>Word Finding Game</h1>
+        <div class="info">
+            <p>Time Left: <span id="timer">120</span> seconds</p>
+            <p>Score: <span id="score">0</span></p>
+        </div>
+        <div id="grid" class="grid"></div>
+        <button id="reset">Restart Game</button>
+    </div>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const grid = document.getElementById("grid");
+            const timerDisplay = document.getElementById("timer");
+            const scoreDisplay = document.getElementById("score");
+            const resetButton = document.getElementById("reset");
+            
+            const validWords = ['apple', 'banana', 'cherry', 'date', 'elder', 'fig', 'grape', 'honey', 'ice', 'jam'];
+            let letters = new Array(25).fill('');
+            let selectedLetters = [];
+            let selectedIndices = [];
+            let score = 0;
+            let timeLeft = 120;
+            let gameInterval;
+            let letterInterval;
+            let emptyCells = Array.from({ length: 25 }, (_, i) => i);
+            
+            function getRandomLetter() {
+                const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                return alphabet[Math.floor(Math.random() * alphabet.length)];
+            }
+            
+            function generateGrid() {
+                grid.innerHTML = "";
+                for (let i = 0; i < 25; i++) {
+                    const cell = document.createElement("div");
+                    cell.textContent = "";
+                    cell.dataset.index = i;
+                    cell.classList.add("grid-cell");
+                    cell.addEventListener("click", selectLetter);
+                    grid.appendChild(cell);
+                }
+                emptyCells = Array.from({ length: 25 }, (_, i) => i);
+                fillGridWithDelay();
+            }
+            
+            function fillGridWithDelay() {
+                letterInterval = setInterval(() => {
+                    if (emptyCells.length > 0) {
+                        let randomIndex = Math.floor(Math.random() * emptyCells.length);
+                        let cellIndex = emptyCells.splice(randomIndex, 1)[0];
+                        let letter = getRandomLetter();
+                        letters[cellIndex] = letter;
+                        grid.children[cellIndex].textContent = letter;
+                    } else {
+                        clearInterval(letterInterval);
+                    }
+                }, 500);
+            }
+            
+            function selectLetter(event) {
+                const cell = event.target;
+                const letter = cell.textContent;
+                const index = parseInt(cell.dataset.index);
+                
+                if (!selectedIndices.includes(index) && letter !== "") {
+                    selectedLetters.push(letter);
+                    selectedIndices.push(index);
+                    cell.classList.add("selected");
+                    checkWord();
+                }
+            }
+            
+            function checkWord() {
+                let word = selectedLetters.join("").toLowerCase();
+                
+                if (validWords.includes(word)) {
+                    score += word.length;
+                    scoreDisplay.textContent = score;
+                    updateGrid();
+                }
+            }
+            
+            function updateGrid() {
+                selectedIndices.forEach(index => {
+                    let newLetter = getRandomLetter();
+                    letters[index] = newLetter;
+                    grid.children[index].textContent = newLetter;
+                    grid.children[index].classList.remove("selected");
+                });
+                
+                selectedLetters = [];
+                selectedIndices = [];
+            }
+            
+            function startTimer() {
+                gameInterval = setInterval(() => {
+                    timeLeft--;
+                    timerDisplay.textContent = timeLeft;
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(gameInterval);
+                        clearInterval(letterInterval);
+                        alert(`Game Over! Your final score is ${score}`);
+                    }
+                }, 1000);
+            }
+            
+            function resetGame() {
+                clearInterval(gameInterval);
+                clearInterval(letterInterval);
+                timeLeft = 120;
+                score = 0;
+                timerDisplay.textContent = timeLeft;
+                scoreDisplay.textContent = score;
+                selectedLetters = [];
+                selectedIndices = [];
+                generateGrid();
+                startTimer();
+            }
+            
+            resetButton.addEventListener("click", resetGame);
+            resetGame();
+        });
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+        .game-container {
+            width: 300px;
+            margin: auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            margin: 20px auto;
+        }
+        .grid div {
+            width: 50px;
+            height: 50px;
+            line-height: 50px;
+            font-size: 24px;
+            background-color: #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+        .grid div.selected {
+            background-color: #87ceeb;
+            color: white;
+        }
+        .info {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            background: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</body>
+</html>
