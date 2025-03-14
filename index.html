@@ -1,191 +1,511 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Word Finding Game</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #f9fafb;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 1.75rem;
+            margin-bottom: 20px;
+            color: #111827;
+        }
+        
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+        }
+        
+        .timer-icon, .score-icon {
+            margin-right: 6px;
+            width: 20px;
+            height: 20px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e5e7eb;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: #4f46e5;
+            transition: width 1s linear;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f3f4f6;
+            border-radius: 6px;
+            font-size: 1.25rem;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+        
+        .cell:hover {
+            transform: scale(1.05);
+        }
+        
+        .cell.selected {
+            background-color: #4f46e5;
+            color: white;
+        }
+        
+        .cell.empty {
+            background-color: #f3f4f6;
+            transition: all 0.3s ease;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+        }
+        
+        button {
+            background-color: #f3f4f6;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background-color: #e5e7eb;
+        }
+        
+        .reset-icon {
+            margin-right: 6px;
+            width: 16px;
+            height: 16px;
+        }
+        
+        .found-words {
+            margin-top: 20px;
+        }
+        
+        .found-words h3 {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+        
+        .words-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .word-badge {
+            background-color: #f3f4f6;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .check-icon {
+            width: 14px;
+            height: 14px;
+            margin-right: 4px;
+        }
+        
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            transform: translateY(-100px);
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+        
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .toast-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .toast-message {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+    </style>
 </head>
 <body>
-    <div class="game-container">
+    <div class="container animate-fade-in">
         <h1>Word Finding Game</h1>
-        <div class="info">
-            <p>Time Left: <span id="timer">120</span> seconds</p>
-            <p>Score: <span id="score">0</span></p>
+        
+        <div class="info-bar">
+            <div class="info-item">
+                <svg class="timer-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span id="timer">120s</span>
+            </div>
+            <div class="info-item">
+                <svg class="score-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 1v4M18.36 6.64l-2.83 2.83M23 12h-4M18.36 17.36l-2.83-2.83M12 23v-4M5.64 17.36l2.83-2.83M1 12h4M5.64 6.64l2.83 2.83"></path>
+                </svg>
+                <span id="score">0</span>
+            </div>
         </div>
+        
+        <div class="progress-bar">
+            <div id="progress" class="progress" style="width: 100%;"></div>
+        </div>
+        
         <div id="grid" class="grid"></div>
-        <button id="reset">Restart Game</button>
+        
+        <div class="controls">
+            <button id="restart">
+                <svg class="reset-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"></path>
+                </svg>
+                Restart Game
+            </button>
+        </div>
+        
+        <div id="found-words-container" class="found-words" style="display: none;">
+            <h3>Words Found:</h3>
+            <div id="words-container" class="words-container"></div>
+        </div>
+    </div>
+    
+    <div id="toast" class="toast">
+        <div class="toast-title">Word Found!</div>
+        <div class="toast-message">You found "WORD" for 40 points!</div>
     </div>
     
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const grid = document.getElementById("grid");
-            const timerDisplay = document.getElementById("timer");
-            const scoreDisplay = document.getElementById("score");
-            const resetButton = document.getElementById("reset");
+        document.addEventListener('DOMContentLoaded', function() {
+            // Game elements
+            const grid = document.getElementById('grid');
+            const timerElement = document.getElementById('timer');
+            const scoreElement = document.getElementById('score');
+            const progressElement = document.getElementById('progress');
+            const restartButton = document.getElementById('restart');
+            const foundWordsContainer = document.getElementById('found-words-container');
+            const wordsContainer = document.getElementById('words-container');
+            const toast = document.getElementById('toast');
             
-            const validWords = ['apple', 'banana', 'cherry', 'date', 'elder', 'fig', 'grape', 'honey', 'ice', 'jam'];
+            // Game variables
+            let validWords = [];
+            const MAX_TIME = 120;
             let letters = new Array(25).fill('');
             let selectedLetters = [];
             let selectedIndices = [];
             let score = 0;
-            let timeLeft = 120;
-            let gameInterval;
-            let letterInterval;
-            let emptyCells = Array.from({ length: 25 }, (_, i) => i);
+            let timeLeft = MAX_TIME;
+            let gameActive = false;
+            let foundWords = [];
+            let timerInterval;
             
+            // Game functions
             function getRandomLetter() {
                 const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
                 return alphabet[Math.floor(Math.random() * alphabet.length)];
             }
             
-            function generateGrid() {
-                grid.innerHTML = "";
-                for (let i = 0; i < 25; i++) {
-                    const cell = document.createElement("div");
-                    cell.textContent = "";
-                    cell.dataset.index = i;
-                    cell.classList.add("grid-cell");
-                    cell.addEventListener("click", selectLetter);
-                    grid.appendChild(cell);
-                }
-                emptyCells = Array.from({ length: 25 }, (_, i) => i);
-                fillGridWithDelay();
-            }
-            
             function fillGridWithDelay() {
-                letterInterval = setInterval(() => {
-                    if (emptyCells.length > 0) {
+                let emptyCells = Array.from({ length: 25 }, (_, i) => i);
+                let newLetters = [...letters];
+                let filledCount = 0;
+                
+                function fillRandomCell() {
+                    if (emptyCells.length > 0 && filledCount < 25) {
+                        // Pick a random empty cell
                         let randomIndex = Math.floor(Math.random() * emptyCells.length);
                         let cellIndex = emptyCells.splice(randomIndex, 1)[0];
                         let letter = getRandomLetter();
-                        letters[cellIndex] = letter;
-                        grid.children[cellIndex].textContent = letter;
-                    } else {
-                        clearInterval(letterInterval);
+                        newLetters[cellIndex] = letter;
+                        
+                        const cell = grid.children[cellIndex];
+                        cell.textContent = letter;
+                        cell.classList.remove('empty');
+                        cell.style.animation = 'fadeIn 0.2s ease-out';
+                        
+                        filledCount++;
+                        
+                        // Schedule the next cell after 1-2 seconds
+                        setTimeout(fillRandomCell, Math.random() * 1000 + 1000); // 1-2 seconds
+                    } else if (filledCount >= 25) {
+                        gameActive = true;
+                        startTimer();
                     }
-                }, 500);
+                }
+                
+                // Start filling the first cell
+                setTimeout(fillRandomCell, 500);
             }
             
-            function selectLetter(event) {
-                const cell = event.target;
-                const letter = cell.textContent;
-                const index = parseInt(cell.dataset.index);
+            function createGrid() {
+                grid.innerHTML = '';
+                for (let i = 0; i < 25; i++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell', 'empty');
+                    cell.dataset.index = i;
+                    cell.addEventListener('click', handleCellClick);
+                    grid.appendChild(cell);
+                }
+            }
+            
+            function handleCellClick(e) {
+                if (!gameActive) return;
                 
-                if (!selectedIndices.includes(index) && letter !== "") {
-                    selectedLetters.push(letter);
+                const index = parseInt(e.target.dataset.index);
+                if (!selectedIndices.includes(index) && letters[index] !== '') {
+                    selectedLetters.push(letters[index]);
                     selectedIndices.push(index);
-                    cell.classList.add("selected");
+                    e.target.classList.add('selected');
+                    
                     checkWord();
                 }
             }
             
             function checkWord() {
-                let word = selectedLetters.join("").toLowerCase();
+                if (selectedLetters.length === 0) return;
                 
-                if (validWords.includes(word)) {
-                    score += word.length;
-                    scoreDisplay.textContent = score;
-                    updateGrid();
+                const word = selectedLetters.join('').toLowerCase();
+                
+                if (validWords.includes(word) && !foundWords.includes(word)) {
+                    const points = word.length * 10;
+                    score += points;
+                    scoreElement.textContent = score;
+                    foundWords.push(word);
+                    
+                    showToast("Word Found!", `You found "${word}" for ${points} points!`);
+                    updateFoundWords();
+                    
+                    // Replace used letters
+                    let newLetters = [...letters];
+                    selectedIndices.forEach(index => {
+                        newLetters[index] = getRandomLetter();
+                        const cell = grid.children[index];
+                        cell.textContent = newLetters[index];
+                        cell.classList.remove('selected');
+                    });
+                    letters = newLetters;
+                } else if (foundWords.includes(word)) {
+                    showToast("Already Found", "You've already found this word!", true);
                 }
-            }
-            
-            function updateGrid() {
-                selectedIndices.forEach(index => {
-                    let newLetter = getRandomLetter();
-                    letters[index] = newLetter;
-                    grid.children[index].textContent = newLetter;
-                    grid.children[index].classList.remove("selected");
-                });
                 
+                // Clear selections
+                selectedIndices.forEach(index => {
+                    grid.children[index].classList.remove('selected');
+                });
                 selectedLetters = [];
                 selectedIndices = [];
             }
             
+            function showToast(title, message, isError = false) {
+                const toastTitle = toast.querySelector('.toast-title');
+                const toastMessage = toast.querySelector('.toast-message');
+                
+                toastTitle.textContent = title;
+                toastMessage.textContent = message;
+                
+                if (isError) {
+                    toast.style.backgroundColor = '#fee2e2';
+                    toastTitle.style.color = '#b91c1c';
+                } else {
+                    toast.style.backgroundColor = 'white';
+                    toastTitle.style.color = 'black';
+                }
+                
+                toast.classList.add('show');
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 2000);
+            }
+            
+            function updateFoundWords() {
+                if (foundWords.length > 0) {
+                    foundWordsContainer.style.display = 'block';
+                    wordsContainer.innerHTML = '';
+                    
+                    foundWords.forEach(word => {
+                        const badge = document.createElement('div');
+                        badge.classList.add('word-badge');
+                        
+                        badge.innerHTML = `
+                            <svg class="check-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            ${word}
+                        `;
+                        
+                        wordsContainer.appendChild(badge);
+                    });
+                }
+            }
+            
             function startTimer() {
-                gameInterval = setInterval(() => {
+                timerInterval = setInterval(() => {
                     timeLeft--;
-                    timerDisplay.textContent = timeLeft;
+                    timerElement.textContent = timeLeft + 's';
+                    progressElement.style.width = (timeLeft / MAX_TIME * 100) + '%';
                     
                     if (timeLeft <= 0) {
-                        clearInterval(gameInterval);
-                        clearInterval(letterInterval);
-                        alert(`Game Over! Your final score is ${score}`);
+                        clearInterval(timerInterval);
+                        gameActive = false;
+                        showGameOver();
                     }
                 }, 1000);
             }
             
-            function resetGame() {
-                clearInterval(gameInterval);
-                clearInterval(letterInterval);
-                timeLeft = 120;
-                score = 0;
-                timerDisplay.textContent = timeLeft;
-                scoreDisplay.textContent = score;
-                selectedLetters = [];
-                selectedIndices = [];
-                generateGrid();
-                startTimer();
+            function showGameOver() {
+                showToast("Game Over!", `Your final score is ${score}`, false);
             }
             
-            resetButton.addEventListener("click", resetGame);
+            function resetGame() {
+                // Reset game state
+                letters = new Array(25).fill('');
+                selectedLetters = [];
+                selectedIndices = [];
+                score = 0;
+                timeLeft = MAX_TIME;
+                foundWords = [];
+                gameActive = false;
+                
+                // Reset UI
+                scoreElement.textContent = '0';
+                timerElement.textContent = MAX_TIME + 's';
+                progressElement.style.width = '100%';
+                foundWordsContainer.style.display = 'none';
+                wordsContainer.innerHTML = '';
+                
+                // Clear any active timers
+                clearInterval(timerInterval);
+                
+                // Create fresh grid
+                createGrid();
+                
+                // Start the game with delay
+                setTimeout(fillGridWithDelay, 500);
+            }
+            
+            function loadDictionary() {
+                // Fallback dictionary in case API fails
+                const fallbackWords = [
+                    'apple', 'banana', 'cherry', 'date', 'elder', 
+                    'fig', 'grape', 'honey', 'ice', 'jam', 'kiwi',
+                    'lemon', 'mango', 'nuts', 'orange', 'peach',
+                    'quince', 'raspberry', 'strawberry', 'tangerine',
+                    'cat', 'dog', 'bird', 'fish', 'lion', 'tiger',
+                    'book', 'desk', 'lamp', 'chair', 'table', 'door',
+                    'car', 'bike', 'boat', 'train', 'plane', 'bus'
+                ];
+                
+                // Try to get an English dictionary from API
+                fetch('https://api.dictionaryapi.dev/api/v2/entries/en/hello')
+                    .then(response => {
+                        if (response.ok) {
+                            // If API works, we'll load more words (just using hello as a test)
+                            console.log("Dictionary API is working");
+                            // For real-world use, we'd load a full dictionary here
+                            // This is just a demonstration, so we'll use the fallback plus more words
+                            validWords = [
+                                ...fallbackWords,
+                                'hello', 'world', 'code', 'game', 'play',
+                                'fun', 'joy', 'love', 'hope', 'peace',
+                                'happy', 'smile', 'laugh', 'dream', 'wish'
+                            ];
+                        } else {
+                            throw new Error('API not working');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Dictionary API error:', error);
+                        validWords = fallbackWords;
+                    })
+                    .finally(() => {
+                        console.log(`Loaded ${validWords.length} words`);
+                    });
+            }
+            
+            // Event listeners
+            restartButton.addEventListener('click', resetGame);
+            
+            // Load dictionary and initialize game
+            loadDictionary();
             resetGame();
         });
     </script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f4;
-        }
-        .game-container {
-            width: 300px;
-            margin: auto;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 5px;
-            margin: 20px auto;
-        }
-        .grid div {
-            width: 50px;
-            height: 50px;
-            line-height: 50px;
-            font-size: 24px;
-            background-color: #ddd;
-            border-radius: 5px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.3s;
-        }
-        .grid div.selected {
-            background-color: #87ceeb;
-            color: white;
-        }
-        .info {
-            font-size: 18px;
-            margin-bottom: 10px;
-        }
-        button {
-            padding: 10px;
-            font-size: 16px;
-            border: none;
-            background: #007bff;
-            color: white;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-    </style>
 </body>
 </html>
